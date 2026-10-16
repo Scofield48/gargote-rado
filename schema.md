@@ -110,3 +110,25 @@ LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite, prix_unitaire)
 PAIEMENT(**id_paiement**, #id_commande, #id_mode_paiement, montant, date_paiement, reference_transaction?)
 
 **Piège.** Une colonne `ingredients VARCHAR(500)` (« riz, zébu, brèdes ») n'est pas une donnée exploitable : on ne peut pas y mettre les quantités ni les unités, ni calculer la consommation, ni lier l'ingrédient à son stock, et les fautes de frappe ou les variantes d'écriture rendent les recherches fausses. La relation plat–ingrédient est une association n–n qui porte une quantité, d'où la table `RECETTE`.
+
+---
+
+## Étape 9 – Les menus du jour
+
+CATEGORIE(**id_categorie**, libelle)
+PLAT(**id_plat**, nom, prix, #id_categorie)
+COMPOSITION_MENU(**#id_menu**, **#id_plat**, quantite) (nouveau)
+PRIX_PLAT(**#id_plat**, **date_debut**, prix)
+INGREDIENT(**id_ingredient**, nom, unite, stock)
+RECETTE(**#id_plat**, **#id_ingredient**, quantite)
+CLIENT(**id_client**, nom, telephone?)
+SERVEUR(**id_serveur**, nom)
+TABLE_SALLE(**id_table_salle**, numero)
+MODE_PAIEMENT(**id_mode_paiement**, libelle)
+COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table_salle?)
+LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite, prix_unitaire)
+PAIEMENT(**id_paiement**, #id_commande, #id_mode_paiement, montant, date_paiement, reference_transaction?)
+
+Dans `COMPOSITION_MENU`, `id_menu` et `id_plat` référencent tous deux `PLAT` (association réflexive). Le menu a sa propre catégorie « Menu ».
+
+**Piège.** Une table `menu` séparée obligerait `LIGNE_COMMANDE` à référencer deux tables (plat ou menu), alors que le menu se commande comme un plat : en faire un plat garde une seule clé étrangère. La contrainte `CHECK (id_menu <> id_plat)` empêche un menu de se contenir lui-même ; elle ne détecte pas un cycle indirect (A contient B qui contient A), qui demanderait un contrôle applicatif ou un déclencheur.

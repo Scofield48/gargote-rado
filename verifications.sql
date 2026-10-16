@@ -99,3 +99,21 @@ WHERE c.date_commande = DATE '2026-10-12'
 GROUP BY i.id_ingredient, i.nom, i.unite
 ORDER BY i.nom;
 
+
+-- ===== Étape 09 : pour chaque menu, prix, somme à la carte et économie =====
+SELECT m.nom AS menu,
+       m.prix AS prix_menu,
+       SUM(cm.quantite * p.prix)           AS somme_a_la_carte,
+       SUM(cm.quantite * p.prix) - m.prix  AS economie
+FROM plat m
+JOIN composition_menu cm ON cm.id_menu = m.id_plat
+JOIN plat p              ON p.id_plat = cm.id_plat
+GROUP BY m.id_plat, m.nom, m.prix
+ORDER BY m.nom;
+
+-- Contenu du menu
+SELECT m.nom AS menu, p.nom AS plat, cm.quantite, p.prix
+FROM composition_menu cm
+JOIN plat m ON m.id_plat = cm.id_menu
+JOIN plat p ON p.id_plat = cm.id_plat
+ORDER BY m.nom, p.nom;
