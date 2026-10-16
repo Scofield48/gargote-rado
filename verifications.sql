@@ -19,3 +19,10 @@ LEFT JOIN plat p            ON p.id_plat = lc.id_plat
 GROUP BY c.id_commande, c.date_commande
 ORDER BY c.id_commande;
 
+-- ===== Étape 04 : commandes avec le nom du client (« client de passage » si aucun) =====
+SELECT c.id_commande, c.date_commande,
+       COALESCE(cl.nom, 'client de passage') AS client
+FROM commande c
+LEFT JOIN client cl ON cl.id_client = c.id_client
+ORDER BY c.id_commande;
+

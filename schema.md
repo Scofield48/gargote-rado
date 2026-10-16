@@ -31,3 +31,15 @@ LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite) (nouveau)
 
 **Piège.** La quantité se place dans la table d'association `LIGNE_COMMANDE`, car elle dépend du couple (commande, plat) : elle n'appartient ni à `COMMANDE` (plusieurs plats) ni à `PLAT` (plusieurs commandes).
 
+---
+
+## Étape 4 – Les habitués
+
+CATEGORIE(**id_categorie**, libelle)
+PLAT(**id_plat**, nom, prix, #id_categorie)
+CLIENT(**id_client**, nom, telephone?) (nouveau)
+COMMANDE(**id_commande**, date_commande, #id_client?) (modifié)
+LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
+
+**Piège.** Non : la clé étrangère `id_client` est facultative (NULL = client de passage). Il faut une `LEFT JOIN` de `COMMANDE` vers `CLIENT` ; une `JOIN` simple éliminerait toutes les commandes de clients de passage.
+
