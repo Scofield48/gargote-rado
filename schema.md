@@ -91,3 +91,22 @@ PAIEMENT(**id_paiement**, #id_commande, #id_mode_paiement, montant, date_paiemen
 **Constat.** Après le passage du romazava à 7 500 Ar, la requête de l'étape 3 (qui lit `plat.prix`) donne 16 000 Ar pour la commande 1 au lieu de 15 000 : le montant d'une ancienne facture a changé, car le prix n'est pas conservé dans la commande.
 
 **Correction.** Le prix de vente est figé dans `LIGNE_COMMANDE.prix_unitaire` au moment de la commande : le montant d'une commande ne dépend plus de `PLAT.prix`. Bonus : `PRIX_PLAT` garde l'historique de tous les prix (un prix est valable de `date_debut` jusqu'au début du prix suivant) ; `PLAT.prix` reste le prix courant, mis à jour en même temps qu'une nouvelle ligne de `PRIX_PLAT`. Les requêtes des étapes 3, 5 et 6 de `verifications.sql` utilisent désormais `prix_unitaire`.
+
+---
+
+## Étape 8 – Les ingrédients
+
+CATEGORIE(**id_categorie**, libelle)
+PLAT(**id_plat**, nom, prix, #id_categorie)
+PRIX_PLAT(**#id_plat**, **date_debut**, prix)
+INGREDIENT(**id_ingredient**, nom, unite, stock) (nouveau)
+RECETTE(**#id_plat**, **#id_ingredient**, quantite) (nouveau)
+CLIENT(**id_client**, nom, telephone?)
+SERVEUR(**id_serveur**, nom)
+TABLE_SALLE(**id_table_salle**, numero)
+MODE_PAIEMENT(**id_mode_paiement**, libelle)
+COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table_salle?)
+LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite, prix_unitaire)
+PAIEMENT(**id_paiement**, #id_commande, #id_mode_paiement, montant, date_paiement, reference_transaction?)
+
+**Piège.** Une colonne `ingredients VARCHAR(500)` (« riz, zébu, brèdes ») n'est pas une donnée exploitable : on ne peut pas y mettre les quantités ni les unités, ni calculer la consommation, ni lier l'ingrédient à son stock, et les fautes de frappe ou les variantes d'écriture rendent les recherches fausses. La relation plat–ingrédient est une association n–n qui porte une quantité, d'où la table `RECETTE`.

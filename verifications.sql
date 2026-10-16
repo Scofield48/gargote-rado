@@ -88,3 +88,14 @@ JOIN plat p ON p.id_plat = pp.id_plat
 WHERE p.id_plat IN (SELECT id_plat FROM prix_plat GROUP BY id_plat HAVING COUNT(*) > 1)
 ORDER BY p.nom, pp.date_debut;
 
+-- ===== Étape 08 : consommation théorique d'ingrédients le 12 octobre 2026 =====
+SELECT i.nom AS ingredient, i.unite,
+       SUM(lc.quantite * r.quantite) AS consommation_theorique
+FROM commande c
+JOIN ligne_commande lc ON lc.id_commande = c.id_commande
+JOIN recette r         ON r.id_plat = lc.id_plat
+JOIN ingredient i      ON i.id_ingredient = r.id_ingredient
+WHERE c.date_commande = DATE '2026-10-12'
+GROUP BY i.id_ingredient, i.nom, i.unite
+ORDER BY i.nom;
+
