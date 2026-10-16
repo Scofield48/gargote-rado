@@ -11,11 +11,11 @@ GROUP BY c.id_categorie, c.libelle
 ORDER BY c.id_categorie;
 
 -- ===== Étape 03 : montant total de chaque commande =====
+-- (mis à jour à l'étape 7 : utilise le prix figé prix_unitaire de chaque ligne)
 SELECT c.id_commande, c.date_commande,
-       COALESCE(SUM(lc.quantite * p.prix), 0) AS montant_total
+       COALESCE(SUM(lc.quantite * lc.prix_unitaire), 0) AS montant_total
 FROM commande c
 LEFT JOIN ligne_commande lc ON lc.id_commande = c.id_commande
-LEFT JOIN plat p            ON p.id_plat = lc.id_plat
 GROUP BY c.id_commande, c.date_commande
 ORDER BY c.id_commande;
 
@@ -27,13 +27,13 @@ LEFT JOIN client cl ON cl.id_client = c.id_client
 ORDER BY c.id_commande;
 
 -- ===== Étape 05 : nombre de commandes et chiffre d'affaires par serveur =====
+-- (mis à jour à l'étape 7 : utilise le prix figé prix_unitaire)
 SELECT s.nom AS serveur,
-       COUNT(DISTINCT c.id_commande)            AS nb_commandes,
-       COALESCE(SUM(lc.quantite * p.prix), 0)   AS chiffre_affaires
+       COUNT(DISTINCT c.id_commande)                       AS nb_commandes,
+       COALESCE(SUM(lc.quantite * lc.prix_unitaire), 0)    AS chiffre_affaires
 FROM serveur s
 LEFT JOIN commande c        ON c.id_serveur = s.id_serveur
 LEFT JOIN ligne_commande lc ON lc.id_commande = c.id_commande
-LEFT JOIN plat p            ON p.id_plat = lc.id_plat
 GROUP BY s.id_serveur, s.nom
 ORDER BY s.id_serveur;
 
@@ -45,16 +45,17 @@ FROM commande c
 JOIN serveur s            ON s.id_serveur = c.id_serveur
 LEFT JOIN table_salle t   ON t.id_table_salle = c.id_table_salle
 ORDER BY c.id_commande;
+
 -- ===== Étape 06 : commandes non soldées (dû, payé, reste à payer) =====
+-- (mis à jour à l'étape 7 : le montant dû utilise le prix figé prix_unitaire)
 SELECT c.id_commande,
        d.montant_du,
        COALESCE(p.montant_paye, 0)                  AS montant_paye,
        d.montant_du - COALESCE(p.montant_paye, 0)   AS reste_a_payer
 FROM commande c
-JOIN (SELECT lc.id_commande, SUM(lc.quantite * pl.prix) AS montant_du
-      FROM ligne_commande lc
-      JOIN plat pl ON pl.id_plat = lc.id_plat
-      GROUP BY lc.id_commande) d ON d.id_commande = c.id_commande
+JOIN (SELECT id_commande, SUM(quantite * prix_unitaire) AS montant_du
+      FROM ligne_commande
+      GROUP BY id_commande) d ON d.id_commande = c.id_commande
 LEFT JOIN (SELECT id_commande, SUM(montant) AS montant_paye
            FROM paiement
            GROUP BY id_commande) p ON p.id_commande = c.id_commande
@@ -66,4 +67,24 @@ SELECT pa.id_commande, m.libelle AS mode_paiement, pa.montant, pa.reference_tran
 FROM paiement pa
 JOIN mode_paiement m ON m.id_mode_paiement = pa.id_mode_paiement
 ORDER BY pa.id_paiement;
+
+-- ===== Étape 07 : le constat et la correction =====
+-- Montant des commandes avec le prix COURANT du plat (ancienne méthode, fausse)
+-- comparé au prix FIGÉ dans la ligne de commande (bonne méthode).
+-- Commande 1 : 16 000 (faux, le romazava a augmenté) contre 15 000 (correct).
+SELECT c.id_commande, c.date_commande,
+       SUM(lc.quantite * p.prix)          AS montant_prix_courant,
+       SUM(lc.quantite * lc.prix_unitaire) AS montant_prix_fige
+FROM commande c
+JOIN ligne_commande lc ON lc.id_commande = c.id_commande
+JOIN plat p            ON p.id_plat = lc.id_plat
+GROUP BY c.id_commande, c.date_commande
+ORDER BY c.id_commande;
+
+-- Bonus : historique des prix de chaque plat dont le prix a changé
+SELECT p.nom, pp.date_debut, pp.prix
+FROM prix_plat pp
+JOIN plat p ON p.id_plat = pp.id_plat
+WHERE p.id_plat IN (SELECT id_plat FROM prix_plat GROUP BY id_plat HAVING COUNT(*) > 1)
+ORDER BY p.nom, pp.date_debut;
 

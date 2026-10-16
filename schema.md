@@ -72,3 +72,22 @@ LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
 PAIEMENT(**id_paiement**, #id_commande, #id_mode_paiement, montant, date_paiement, reference_transaction?) (nouveau)
 
 **Piège.** Une colonne `montant_paye` dans `COMMANDE` ne garde qu'un total : elle ne dit pas qui a payé quoi, par quel mode, quand, avec quelle référence, et ne permet pas de paiement en plusieurs fois ni en mode mixte ; de plus, c'est une donnée calculable (redondante) qui peut devenir fausse. Pour le mode de paiement, un `CHECK (mode IN (...))` est simple et évite une jointure, mais ajouter ou renommer un mode oblige à modifier la structure et le libellé est répété à chaque ligne ; une table de référence permet d'ajouter un mode par un simple `INSERT`, garantit l'intégrité par clé étrangère et peut porter d'autres informations, au prix d'une jointure en plus : c'est le choix retenu.
+
+---
+
+## Étape 7 – Les prix changent
+
+CATEGORIE(**id_categorie**, libelle)
+PLAT(**id_plat**, nom, prix, #id_categorie) — `prix` = prix courant
+PRIX_PLAT(**#id_plat**, **date_debut**, prix) (nouveau)
+CLIENT(**id_client**, nom, telephone?)
+SERVEUR(**id_serveur**, nom)
+TABLE_SALLE(**id_table_salle**, numero)
+MODE_PAIEMENT(**id_mode_paiement**, libelle)
+COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table_salle?)
+LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite, prix_unitaire) (modifié)
+PAIEMENT(**id_paiement**, #id_commande, #id_mode_paiement, montant, date_paiement, reference_transaction?)
+
+**Constat.** Après le passage du romazava à 7 500 Ar, la requête de l'étape 3 (qui lit `plat.prix`) donne 16 000 Ar pour la commande 1 au lieu de 15 000 : le montant d'une ancienne facture a changé, car le prix n'est pas conservé dans la commande.
+
+**Correction.** Le prix de vente est figé dans `LIGNE_COMMANDE.prix_unitaire` au moment de la commande : le montant d'une commande ne dépend plus de `PLAT.prix`. Bonus : `PRIX_PLAT` garde l'historique de tous les prix (un prix est valable de `date_debut` jusqu'au début du prix suivant) ; `PLAT.prix` reste le prix courant, mis à jour en même temps qu'une nouvelle ligne de `PRIX_PLAT`. Les requêtes des étapes 3, 5 et 6 de `verifications.sql` utilisent désormais `prix_unitaire`.
