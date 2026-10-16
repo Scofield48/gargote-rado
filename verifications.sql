@@ -45,3 +45,25 @@ FROM commande c
 JOIN serveur s            ON s.id_serveur = c.id_serveur
 LEFT JOIN table_salle t   ON t.id_table_salle = c.id_table_salle
 ORDER BY c.id_commande;
+-- ===== Étape 06 : commandes non soldées (dû, payé, reste à payer) =====
+SELECT c.id_commande,
+       d.montant_du,
+       COALESCE(p.montant_paye, 0)                  AS montant_paye,
+       d.montant_du - COALESCE(p.montant_paye, 0)   AS reste_a_payer
+FROM commande c
+JOIN (SELECT lc.id_commande, SUM(lc.quantite * pl.prix) AS montant_du
+      FROM ligne_commande lc
+      JOIN plat pl ON pl.id_plat = lc.id_plat
+      GROUP BY lc.id_commande) d ON d.id_commande = c.id_commande
+LEFT JOIN (SELECT id_commande, SUM(montant) AS montant_paye
+           FROM paiement
+           GROUP BY id_commande) p ON p.id_commande = c.id_commande
+WHERE d.montant_du > COALESCE(p.montant_paye, 0)
+ORDER BY c.id_commande;
+
+-- Détail des paiements
+SELECT pa.id_commande, m.libelle AS mode_paiement, pa.montant, pa.reference_transaction
+FROM paiement pa
+JOIN mode_paiement m ON m.id_mode_paiement = pa.id_mode_paiement
+ORDER BY pa.id_paiement;
+

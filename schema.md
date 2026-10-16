@@ -56,3 +56,19 @@ COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table_sal
 LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
 
 **Piège.** Une table de la salle est un objet physique permanent, alors qu'une commande est un événement daté : une même table accueille de nombreuses commandes au fil du temps, d'où une clé étrangère de `COMMANDE` vers `TABLE_SALLE` (facultative : NULL = à emporter). `TABLE` est un mot réservé du SQL (`CREATE TABLE`, `ALTER TABLE`), donc inutilisable comme nom de table sans guillemets : on utilise `table_salle`.
+
+---
+
+## Étape 6 – Les paiements
+
+CATEGORIE(**id_categorie**, libelle)
+PLAT(**id_plat**, nom, prix, #id_categorie)
+CLIENT(**id_client**, nom, telephone?)
+SERVEUR(**id_serveur**, nom)
+TABLE_SALLE(**id_table_salle**, numero)
+MODE_PAIEMENT(**id_mode_paiement**, libelle) (nouveau)
+COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table_salle?)
+LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
+PAIEMENT(**id_paiement**, #id_commande, #id_mode_paiement, montant, date_paiement, reference_transaction?) (nouveau)
+
+**Piège.** Une colonne `montant_paye` dans `COMMANDE` ne garde qu'un total : elle ne dit pas qui a payé quoi, par quel mode, quand, avec quelle référence, et ne permet pas de paiement en plusieurs fois ni en mode mixte ; de plus, c'est une donnée calculable (redondante) qui peut devenir fausse. Pour le mode de paiement, un `CHECK (mode IN (...))` est simple et évite une jointure, mais ajouter ou renommer un mode oblige à modifier la structure et le libellé est répété à chaque ligne ; une table de référence permet d'ajouter un mode par un simple `INSERT`, garantit l'intégrité par clé étrangère et peut porter d'autres informations, au prix d'une jointure en plus : c'est le choix retenu.
