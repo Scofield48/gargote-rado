@@ -43,3 +43,16 @@ LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
 
 **Piège.** Non : la clé étrangère `id_client` est facultative (NULL = client de passage). Il faut une `LEFT JOIN` de `COMMANDE` vers `CLIENT` ; une `JOIN` simple éliminerait toutes les commandes de clients de passage.
 
+---
+
+## Étape 5 – Serveurs et tables
+
+CATEGORIE(**id_categorie**, libelle)
+PLAT(**id_plat**, nom, prix, #id_categorie)
+CLIENT(**id_client**, nom, telephone?)
+SERVEUR(**id_serveur**, nom) (nouveau)
+TABLE_SALLE(**id_table_salle**, numero) (nouveau)
+COMMANDE(**id_commande**, date_commande, #id_client?, #id_serveur, #id_table_salle?) (modifié)
+LIGNE_COMMANDE(**#id_commande**, **#id_plat**, quantite)
+
+**Piège.** Une table de la salle est un objet physique permanent, alors qu'une commande est un événement daté : une même table accueille de nombreuses commandes au fil du temps, d'où une clé étrangère de `COMMANDE` vers `TABLE_SALLE` (facultative : NULL = à emporter). `TABLE` est un mot réservé du SQL (`CREATE TABLE`, `ALTER TABLE`), donc inutilisable comme nom de table sans guillemets : on utilise `table_salle`.
